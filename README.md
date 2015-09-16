@@ -1,6 +1,6 @@
-# space-invaders
+# space invaders in space
 
-A Quil sketch designed to ... well, that part is up to you.
+A Quil sketch designed done during a London Clojure Dojo. This is the beginning of a space invaders game. Right now, you can move left and right with keyboard and there's an autofire.
 
 ## Usage
 

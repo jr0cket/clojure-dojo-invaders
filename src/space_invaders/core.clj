@@ -3,37 +3,39 @@
             [quil.middleware :as m]))
 
 (defn setup []
-  ; Set frame rate to 30 frames per second.
   (q/frame-rate 30)
-  ; Set color mode to HSB (HSV) instead of default RGB.
   (q/color-mode :hsb)
-  ; setup function returns initial state. It contains
-  ; circle color and position.
-  {:player {:x 50}
+    {:player {:x 50}
    :bullets []
    :frame 1})
+
+(def player-speed 2)
+
+(def bullet-speed 1)
+
+(def fire-rate 10)
+
+(defn fire-bullet [state]
+  (assoc state
+         :bullets (if (= 0 (mod (:frame state) fire-rate))
+                    (cons {:x (-> state :player :x) :y 90}
+                          (:bullets state))
+                    (:bullets state))))
 
 (defn update-bullets [bullets]
   (filter (fn [bullet] (> (:x bullet) 0 ))
           (map (fn [bullet]
                  {:x (:x bullet)
-                  :y (- (:y bullet) 1)})
+                  :y (- (:y bullet) bullet-speed)})
                bullets)))
 
-(defn fire-bullet [state]
-  {:player (:player state)
-   :bullets (if (= 2 (mod (:frame state)))
-              (cons {:x (:x (:player state)) :y 90}
-                    (:bullets state))
-              (:bullets state)
-              )
-   :frame (:frame state)})
-
 (defn update-state [state]
-  {:player (:player state)
-   :bullets (update-bullets (:bullets (fire-bullet state)))
-   :frame (+ 1(:frame state))}
-              )
+  (assoc state
+         :bullets (-> state
+                       fire-bullet
+                       :bullets
+                       update-bullets)
+         :frame (+ 1 (:frame state))))
 
 (defn draw-player [screen-width screen-height player-x]
   (let [width 30
@@ -50,33 +52,27 @@
           y (* screen-width (/ (:y bullet) 100))
           start-x (- x (/ size 2))
           start-y (- y (/ size 2))]
-      (q/ellipse start-x start-y size size))
-    )
-  )
+      (q/ellipse start-x start-y size size))))
 
 (defn draw-state [state]
-  ; Clear the sketch by filling it with light-grey color.
   (q/background 240)
-  (draw-player (q/width) (q/height) (:x (:player state)))
+  (draw-player (q/width) (q/height) (-> state :player :x))
   (draw-bullets (q/width) (q/height) (:bullets state)))
 
 
 (defn key-pressed [old-state event]
+  (let [player-x (-> old-state :player :x)]
   (case  (:key-code event)
-    37 {:player {:x (- (:x (:player old-state)) 1)} :bullets (:bullets old-state) :frame (:frame old-state)}
-    39 {:player {:x (+ (:x (:player old-state)) 1)} :bullets (:bullets old-state) :frame (:frame old-state)}))
+    37 (assoc old-state :player {:x (- player-x player-speed)})
+    39 (assoc old-state :player {:x (+ player-x player-speed)})
+    )))
 
 (q/defsketch space-invaders
-  :title "You spin my circle right round"
+  :title "SPACE INVADERS IN SPACE"
   :size [500 500]
-  ; setup function called only once, during sketch initialization.
   :setup setup
-  ; update-state is called on each iteration before draw-state.
   :key-pressed key-pressed
   :update update-state
   :draw draw-state
   :features [:keep-on-top]
-  ; This sketch uses functional-mode middleware.
-  ; Check quil wiki for more info about middlewares and particularly
-  ; fun-mode.
   :middleware [m/fun-mode])
